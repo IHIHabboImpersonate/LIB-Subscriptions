@@ -1,95 +1,96 @@
-﻿using System;
-using System.Linq;
-using IHI.Server.Habbos;
+﻿using IHI.Database;
 using IHI.Server.Extras;
-using IHI.Database;
+using IHI.Server.Habbos;
+using NHibernate.Criterion;
 
-using NHibernate;
-
-namespace IHI.Server.Plugin.Cecer1.Subscriptions
+namespace IHI.Server.Libraries.Cecer1.Subscriptions
 {
     public class SubscriptionData
     {
-        private Habbos.Habbo fHabbo;
-        private Subscription fSubscriptionDatabase;
+        private readonly Habbo _habbo;
+        private readonly Subscription _subscriptionDatabase;
 
-        public SubscriptionData(Habbos.Habbo Habbo, string Type)
+        public SubscriptionData(Habbo habbo, string type)
         {
-            this.fHabbo = Habbo;
+            _habbo = habbo;
 
-            try
+            using (var db = CoreManager.GetServerCore().GetDatabaseSession())
             {
-                using (ISession DB = CoreManager.GetCore().GetDatabaseSession())
-                {
-                    this.fSubscriptionDatabase = DB.CreateCriteria<Database.Subscription>().
-                        Add(new NHibernate.Criterion.EqPropertyExpression("habbo_id", this.fHabbo.GetID().ToString())).
-                        Add(new NHibernate.Criterion.EqPropertyExpression("subscription_type", Type)).
-                        List<Database.Subscription>().First();
-                }
+                _subscriptionDatabase = db.CreateCriteria<Subscription>().
+                    Add(Restrictions.Eq("habbo_id", _habbo.GetID())).
+                    Add(Restrictions.Eq("subscription_type", type)).
+                    UniqueResult<Subscription>();
             }
-            catch (ArgumentNullException)
-            {
-                this.fSubscriptionDatabase = new Database.Subscription();
-                this.fSubscriptionDatabase.habbo_id = Habbo.GetID();
-            }
+            if (_subscriptionDatabase != null) return;
+            _subscriptionDatabase = new Subscription {habbo_id = habbo.GetID()};
         }
 
         public int GetRemainingSeconds()
         {
-            return UsefulStuff.GetUnixTimpstamp() - this.fSubscriptionDatabase.total_bought + this.fSubscriptionDatabase.skipped_length;
+            if (_subscriptionDatabase.skipped_length == 0)
+                return 0; // Not started yet.
+            return UsefulStuff.GetUnixTimpstamp() - _subscriptionDatabase.total_bought +
+                   _subscriptionDatabase.skipped_length;
         }
+
         public int GetExpiredSeconds()
         {
-            return UsefulStuff.GetUnixTimpstamp() - this.fSubscriptionDatabase.skipped_length;
+            if (_subscriptionDatabase.skipped_length == 0)
+                return 0; // Not started yet.
+            return UsefulStuff.GetUnixTimpstamp() - _subscriptionDatabase.skipped_length;
         }
-        public SubscriptionData SetRemainingSeconds(int Seconds)
+
+        public SubscriptionData SetRemainingSeconds(int seconds)
         {
-            this.fSubscriptionDatabase.total_bought = UsefulStuff.GetUnixTimpstamp() - this.fSubscriptionDatabase.skipped_length + Seconds;
+            _subscriptionDatabase.total_bought = UsefulStuff.GetUnixTimpstamp() - _subscriptionDatabase.skipped_length +
+                                                 seconds;
             return this;
         }
-        public SubscriptionData SetExpiredSeconds(int Seconds)
+
+        public SubscriptionData SetExpiredSeconds(int seconds)
         {
-            this.fSubscriptionDatabase.skipped_length = UsefulStuff.GetUnixTimpstamp() - Seconds;
+            _subscriptionDatabase.skipped_length = UsefulStuff.GetUnixTimpstamp() - seconds;
             return this;
         }
-        public SubscriptionData AddSubscriptionSeconds(int Seconds)
+
+        public SubscriptionData AddSubscriptionSeconds(int seconds)
         {
-            this.fSubscriptionDatabase.total_bought += Seconds;
+            _subscriptionDatabase.total_bought += seconds;
             return this;
         }
 
         public bool IsActive()
         {
-            if (this.fSubscriptionDatabase.paused_start == 0)
+            if (_subscriptionDatabase.paused_start == 0)
                 return true;
             return false;
         }
 
-        public SubscriptionData SetActive(bool Active)
+        public SubscriptionData SetActive(bool active)
         {
-            if (Active == IsActive())
+            if (active == IsActive())
                 return this; // Nothing to do
 
-            if (!Active)
+            if (!active)
             {
-                this.fSubscriptionDatabase.paused_start = UsefulStuff.GetUnixTimpstamp();
+                _subscriptionDatabase.paused_start = UsefulStuff.GetUnixTimpstamp();
                 return this;
             }
-            this.fSubscriptionDatabase.skipped_length += UsefulStuff.GetUnixTimpstamp() - this.fSubscriptionDatabase.paused_start;
-            this.fSubscriptionDatabase.paused_start = 0;
+            _subscriptionDatabase.skipped_length += UsefulStuff.GetUnixTimpstamp() - _subscriptionDatabase.paused_start;
+            _subscriptionDatabase.paused_start = 0;
             return this;
         }
 
         public SubscriptionData SaveChanges()
         {
-            using (ISession DB = CoreManager.GetCore().GetDatabaseSession())
+            using (var db = CoreManager.GetServerCore().GetDatabaseSession())
             {
-                Database.Subscription S = DB.Get<Database.Subscription>(this.fHabbo.GetID());
-                S.paused_start = this.fSubscriptionDatabase.paused_start;
-                S.skipped_length = this.fSubscriptionDatabase.skipped_length;
-                S.total_bought = this.fSubscriptionDatabase.total_bought;
+                var s = db.Get<Subscription>(_habbo.GetID());
+                s.paused_start = _subscriptionDatabase.paused_start;
+                s.skipped_length = _subscriptionDatabase.skipped_length;
+                s.total_bought = _subscriptionDatabase.total_bought;
 
-                DB.SaveOrUpdate(S);
+                db.SaveOrUpdate(s);
             }
             return this;
         }
