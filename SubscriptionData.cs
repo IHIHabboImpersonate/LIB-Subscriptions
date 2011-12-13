@@ -14,7 +14,7 @@ namespace IHI.Server.Libraries.Cecer1.Subscriptions
         {
             _habbo = habbo;
 
-            using (var db = CoreManager.GetServerCore().GetDatabaseSession())
+            using (var db = CoreManager.ServerCore.GetDatabaseSession())
             {
                 _subscriptionDatabase = db.CreateCriteria<Subscription>().
                     Add(Restrictions.Eq("habbo_id", _habbo.GetID())).
@@ -83,7 +83,7 @@ namespace IHI.Server.Libraries.Cecer1.Subscriptions
 
         public SubscriptionData SaveChanges()
         {
-            using (var db = CoreManager.GetServerCore().GetDatabaseSession())
+            using (var db = CoreManager.ServerCore.GetDatabaseSession())
             {
                 var s = db.Get<Subscription>(_habbo.GetID());
                 s.paused_start = _subscriptionDatabase.paused_start;
