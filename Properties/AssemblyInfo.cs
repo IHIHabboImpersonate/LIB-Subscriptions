@@ -23,9 +23,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Subscriptions Library")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Bluedot")]
+[assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("Subscriptions Library")]
-[assembly: AssemblyCopyright("Copyright © Bluedot 2011")]
+[assembly: AssemblyCopyright("Copyright © Chris Chenery 2012")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
