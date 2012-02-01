@@ -1,4 +1,6 @@
-﻿// 
+﻿#region GPLv3
+
+// 
 // Copyright (C) 2012  Chris Chenery
 // 
 // This program is free software: you can redistribute it and/or modify
@@ -13,10 +15,19 @@
 // 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// 
+
+#endregion
+
+#region Usings
+
 using IHI.Database;
 using IHI.Server.Extras;
 using IHI.Server.Habbos;
+using NHibernate;
 using NHibernate.Criterion;
+
+#endregion
 
 namespace IHI.Server.Libraries.Cecer1.Subscriptions
 {
@@ -29,7 +40,7 @@ namespace IHI.Server.Libraries.Cecer1.Subscriptions
         {
             _habbo = habbo;
 
-            using (var db = CoreManager.ServerCore.GetDatabaseSession())
+            using (ISession db = CoreManager.ServerCore.GetDatabaseSession())
             {
                 _subscriptionDatabase = db.CreateCriteria<Subscription>().
                     Add(Restrictions.Eq("habbo_id", _habbo.GetID())).
@@ -98,9 +109,9 @@ namespace IHI.Server.Libraries.Cecer1.Subscriptions
 
         public SubscriptionData SaveChanges()
         {
-            using (var db = CoreManager.ServerCore.GetDatabaseSession())
+            using (ISession db = CoreManager.ServerCore.GetDatabaseSession())
             {
-                var s = db.Get<Subscription>(_habbo.GetID());
+                Subscription s = db.Get<Subscription>(_habbo.GetID());
                 s.paused_start = _subscriptionDatabase.paused_start;
                 s.skipped_length = _subscriptionDatabase.skipped_length;
                 s.total_bought = _subscriptionDatabase.total_bought;
