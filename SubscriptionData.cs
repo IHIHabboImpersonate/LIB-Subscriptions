@@ -21,6 +21,7 @@
 
 #region Usings
 
+using System;
 using IHI.Database;
 using IHI.Server.Extras;
 using IHI.Server.Habbos;
@@ -55,7 +56,7 @@ namespace IHI.Server.Libraries.Cecer1.Subscriptions
         {
             if (_subscriptionDatabase.skipped_length == 0)
                 return 0; // Not started yet.
-            return UsefulStuff.GetUnixTimpstamp() - _subscriptionDatabase.total_bought +
+            return DateTime.Now.GetUnixTimpstamp() - _subscriptionDatabase.total_bought +
                    _subscriptionDatabase.skipped_length;
         }
 
@@ -63,19 +64,19 @@ namespace IHI.Server.Libraries.Cecer1.Subscriptions
         {
             if (_subscriptionDatabase.skipped_length == 0)
                 return 0; // Not started yet.
-            return UsefulStuff.GetUnixTimpstamp() - _subscriptionDatabase.skipped_length;
+            return DateTime.Now.GetUnixTimpstamp() - _subscriptionDatabase.skipped_length;
         }
 
         public SubscriptionData SetRemainingSeconds(int seconds)
         {
-            _subscriptionDatabase.total_bought = UsefulStuff.GetUnixTimpstamp() - _subscriptionDatabase.skipped_length +
+            _subscriptionDatabase.total_bought = DateTime.Now.GetUnixTimpstamp() - _subscriptionDatabase.skipped_length +
                                                  seconds;
             return this;
         }
 
         public SubscriptionData SetExpiredSeconds(int seconds)
         {
-            _subscriptionDatabase.skipped_length = UsefulStuff.GetUnixTimpstamp() - seconds;
+            _subscriptionDatabase.skipped_length = DateTime.Now.GetUnixTimpstamp() - seconds;
             return this;
         }
 
@@ -99,10 +100,10 @@ namespace IHI.Server.Libraries.Cecer1.Subscriptions
 
             if (!active)
             {
-                _subscriptionDatabase.paused_start = UsefulStuff.GetUnixTimpstamp();
+                _subscriptionDatabase.paused_start = DateTime.Now.GetUnixTimpstamp();
                 return this;
             }
-            _subscriptionDatabase.skipped_length += UsefulStuff.GetUnixTimpstamp() - _subscriptionDatabase.paused_start;
+            _subscriptionDatabase.skipped_length += DateTime.Now.GetUnixTimpstamp() - _subscriptionDatabase.paused_start;
             _subscriptionDatabase.paused_start = 0;
             return this;
         }
